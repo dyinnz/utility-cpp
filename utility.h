@@ -18,8 +18,8 @@ class ScopeGuarder {
   private:
     std::function<void()> _guard;
     ScopeGuarder& operator=(ScopeGuarder&&) = delete;
-    ScopeGuarder& operator=(const ScopeGuarder&) = default;
+    ScopeGuarder& operator=(const ScopeGuarder&) = delete;
     ScopeGuarder(const ScopeGuarder&) = delete;
 };
 
-#define ScopeGuard ScopeGuarder __FILE__##__LINE__##ScopeGuarder = (std::function<void()>)[&]()
+#define ScopeGuard ScopeGuarder __FILE__##__LINE__##scope_guarder = (std::function<void()>)[&]()
