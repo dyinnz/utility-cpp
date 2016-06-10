@@ -47,8 +47,14 @@ int main() {
   for (int i = 0; i < 10000000; ++i) ;
   timer_tree.PopTick();
 
+
   cout << "report" << endl;
   cout << timer_tree.Report() << endl;
+
+  TickOnce tick;
+  for (int i = 0; i < 10000000; ++i) ;
+  cout << tick.Tick().count() << endl;
+  cout << tick.TickString() << endl;
 
   return 0;
 }

@@ -14,12 +14,19 @@
 #include <stack>
 #include <sstream>
 
+
 class TickOnce {
   public:
+    TickOnce();
+
+    std::chrono::system_clock::duration Tick();
+
+    std::string TickString();
 
   private:
-
+    std::chrono::system_clock::time_point _last;
 };
+
 
 class TimerNode {
   public:
@@ -33,7 +40,7 @@ class TimerNode {
 
     void StartSubTick(const std::string &label);
     void EndSubTick();
-    
+
     std::shared_ptr<TimerNode> GetChild(const std::string &label);
 
     std::string Report(int deep = 0);
@@ -55,10 +62,7 @@ class TimerNode {
 
 class TimerTree {
   public:
-    TimerTree(const std::string &label = "ROOT") :
-      _root_label(label), _root(new TimerNode) {
-        _stack.push(_root);
-      }
+    TimerTree(const std::string &label = "ROOT");
 
     void PushTick(const std::string &label);
     void PopTick();

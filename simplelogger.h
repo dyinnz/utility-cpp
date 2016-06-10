@@ -13,6 +13,9 @@
 
 namespace simple_logger {
 
+#define func_debug(__logger, __format, ...) do { \
+  __logger.debug("%s() " __format, __func__, ##__VA_ARGS__); \
+} while (false);
 
 /**
  * log level

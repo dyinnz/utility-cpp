@@ -16,8 +16,29 @@ using std::ostringstream;
 using std::shared_ptr;
 using std::make_shared;
 
-TimerNode::TimerNode() {
+/*----------------------------------------------------------------------------*/
+
+TickOnce::TickOnce() : _last(system_clock::now()) {
+  // empty
+}
+
+
+system_clock::duration TickOnce::Tick() {
+  auto ret = system_clock::now() - _last;
   _last = system_clock::now();
+  return ret;
+}
+
+string TickOnce::TickString() {
+  ostringstream ss;
+  ss << Tick().count() / 1000000.0 << "ms" << std::ends;
+  return move(ss.str());
+}
+
+/*----------------------------------------------------------------------------*/
+
+TimerNode::TimerNode() : _last(system_clock::now()) {
+  // empty
 }
 
 
@@ -127,8 +148,13 @@ void TimerNode::Report(ostringstream &ss, int deep, const string &label) {
   Resume();
 }
 
-
 /*----------------------------------------------------------------------------*/
+
+TimerTree::TimerTree(const std::string &label) 
+: _root_label(label), _root(new TimerNode) {
+
+  _stack.push(_root);
+}
 
 void TimerTree::PushTick(const std::string &label) {
   _stack.top()->StartSubTick(label);
