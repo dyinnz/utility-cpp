@@ -6,41 +6,18 @@
  ******************************************************************************/
 
 #include <cassert>
-#include <iostream>
+#include <iomanip>
 #include "tree_timer.h"
 
 using namespace std::chrono;
 using std::endl;
 using std::string;
 using std::ostringstream;
+using std::ostream;
 using std::shared_ptr;
 using std::make_shared;
 
 /*----------------------------------------------------------------------------*/
-
-TickOnce::TickOnce() : _last(system_clock::now()) {
-  // empty
-}
-
-
-system_clock::duration TickOnce::Tick() {
-  auto ret = system_clock::now() - _last;
-  _last = system_clock::now();
-  return ret;
-}
-
-string TickOnce::TickString() {
-  ostringstream ss;
-  ss << Tick().count() / 1000000.0 << "ms" << std::ends;
-  return move(ss.str());
-}
-
-/*----------------------------------------------------------------------------*/
-
-TimerNode::TimerNode() : _last(system_clock::now()) {
-  // empty
-}
-
 
 void TimerNode::Restart() {
   _chidren.clear();
@@ -89,7 +66,7 @@ void TimerNode::StartSubTick(const std::string &label) {
   auto iter = _chidren.find(label);
   if (iter == _chidren.end()) {
 
-    _current_child = make_shared<TimerNode>();
+    _current_child = make_shared<TimerNode>(label);
     _chidren[label] = _current_child;
 
   } else {
@@ -99,62 +76,68 @@ void TimerNode::StartSubTick(const std::string &label) {
 }
 
 
-void TimerNode::EndSubTick() {
+void TimerNode::EndSubTick(const std::string &label) {
   assert(_current_child);
+
+  if (_current_child->label() != label) {
+    assert(false);
+  }
+
   _current_child->Pause();
   _current_child.reset();
 }
 
 
-shared_ptr<TimerNode> TimerNode::GetChild(const string &label) {
-  return _chidren[label];
-}
-
-
 string TimerNode::Report(int deep) {
   ostringstream ss;
-  Report(ss, 0, "ROOT");
+  print_indent(ss, deep);
+  ss << "+ " << _label << ": " 
+    << std::setw(12) << std::setprecision(4) << std::fixed
+    << duration_to_ms(Span()) << "ms    100%" << endl;
+  RecursiveReport(ss, 0);
   return ss.str();
 }
 
 
-void TimerNode::Report(ostringstream &ss, int deep, const string &label) {
-  Pause();
+void TimerNode::RecursiveReport(ostream &out, int deep) {
+  float total = duration_to_ms(Span());
 
-  // report self
-  for (int i = 0; i < deep*2; ++i) {
-    ss << ' ';
-  }
-  ss << "+ " << label << " : ";
-  ss << Span().count() << endl;
+  float unaccounted {total};
 
-  system_clock::duration sum {0};
-
-  // report children
   for (auto &p : _chidren) {
-    p.second->Report(ss, deep + 1, p.first);
-    sum += p.second->Span();
+    float child_ms = duration_to_ms(p.second->Span());
+    unaccounted -= child_ms;
+
+    print_indent(out, deep+1);
+    out << "+ " << p.first << ": "
+      << std::setw(10) << std::setprecision(4) << std::fixed
+      << child_ms << "ms  " 
+      << std::setw(10) << std::setprecision(2) << std::fixed
+      << child_ms / total * 100.0f << "%" << endl;
+
+    p.second->RecursiveReport(out, deep+1);
   }
 
-  // report unaccounted time
-  auto unaccounted = Span() - sum;
-  if (!_chidren.empty() && float(unaccounted.count() / float(Span().count())) > 0.00001) {
-    for (int i = 0; i < deep*2+2; ++i) {
-      ss << ' ';
-    }
-    ss << "+ Unaccounted : " << (Span() - sum).count() << endl;
+  if (!_chidren.empty() && unaccounted / total > 0.00001f) {
+    print_indent(out, deep+1);
+    out << "+ Unaccounted: " 
+      << std::setw(10) << std::setprecision(4) << std::fixed 
+      << unaccounted << "ms  "
+      << std::setw(10) << std::setprecision(2) << std::fixed
+      << unaccounted / total * 100.0f << "%" << endl;
   }
-
-  Resume();
 }
+
 
 /*----------------------------------------------------------------------------*/
 
-TimerTree::TimerTree(const std::string &label) 
-: _root_label(label), _root(new TimerNode) {
+
+TimerTree::TimerTree(const std::string &label)
+: _root_label(label), _root(new TimerNode(label)) {
 
   _stack.push(_root);
 }
+
 
 void TimerTree::PushTick(const std::string &label) {
   _stack.top()->StartSubTick(label);
@@ -162,15 +145,20 @@ void TimerTree::PushTick(const std::string &label) {
 }
 
 
-void TimerTree::PopTick() {
+void TimerTree::PopTick(const std::string &label) {
+  if (label != _stack.top()->label()) {
+    assert(false);
+  }
+
   _stack.pop();
-  _stack.top()->EndSubTick();
+  _stack.top()->EndSubTick(label);
 }
 
 
-void TimerTree::ReplaceTick(const std::string &label) {
-  PopTick();
-  PushTick(label);
+void TimerTree::ReplaceTick(const std::string &old_label,
+                            const std::string &new_label) {
+  PopTick(old_label);
+  PushTick(new_label);
 }
 
 

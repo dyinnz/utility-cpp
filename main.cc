@@ -1,5 +1,7 @@
 #include <iostream>
 
+#include <unistd.h>
+
 #include "unistd.h"
 #include "simplelogger.h"
 #include "utility.h"
@@ -35,17 +37,17 @@ int main() {
 
   timer_tree.PushTick("level 2 - red");
   for (int i = 0; i < 10000000; ++i) ;
-  timer_tree.PopTick();
+  timer_tree.PopTick("level 2 - red");
 
-  timer_tree.PopTick();
-
-  timer_tree.PushTick("level 1 - world");
-  for (int i = 0; i < 10000000; ++i) ;
-  timer_tree.PopTick();
+  timer_tree.PopTick("level 1 - hello");
 
   timer_tree.PushTick("level 1 - world");
   for (int i = 0; i < 10000000; ++i) ;
-  timer_tree.PopTick();
+  timer_tree.PopTick("level 1 - world");
+
+  timer_tree.PushTick("level 1 - world");
+  for (int i = 0; i < 10000000; ++i) ;
+  timer_tree.PopTick("level 1 - world");
 
 
   cout << "report" << endl;
@@ -55,6 +57,14 @@ int main() {
   for (int i = 0; i < 10000000; ++i) ;
   cout << tick.Tick().count() << endl;
   cout << tick.TickString() << endl;
+
+
+  tick.TickMs();
+  sleep(2);
+  cout << tick.TickMs() << "ms" << endl;
+
+  int test();
+  test();
 
   return 0;
 }

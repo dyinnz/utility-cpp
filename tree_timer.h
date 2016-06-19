@@ -12,16 +12,33 @@
 #include <chrono>
 #include <memory>
 #include <stack>
+#include <ostream>
 #include <sstream>
 
 
 class TickOnce {
   public:
-    TickOnce();
+    TickOnce() : _last(std::chrono::system_clock::now()) {}
 
-    std::chrono::system_clock::duration Tick();
+    std::chrono::system_clock::duration Tick() {
+      auto ret = std::chrono::system_clock::now() - _last;
+      _last = std::chrono::system_clock::now();
+      return ret;
+    }
 
-    std::string TickString();
+    float operator() () {
+      return Tick().count() / 1000000.0f;
+    }
+
+    float TickMs() {
+      return Tick().count() / 1000000.0f;
+    }
+
+    std::string TickString() {
+      std::ostringstream ss;
+      ss << TickMs() << "ms" << std::ends;
+      return std::move(ss.str());
+    }
 
   private:
     std::chrono::system_clock::time_point _last;
@@ -30,7 +47,10 @@ class TickOnce {
 
 class TimerNode {
   public:
-    TimerNode();
+    TimerNode(const std::string label)
+      : _last(std::chrono::system_clock::now()), _label(label) {}
+
+    const std::string& label() { return _label; }
 
     void Restart();
     void Resume();
@@ -39,14 +59,16 @@ class TimerNode {
     std::chrono::system_clock::duration Span();
 
     void StartSubTick(const std::string &label);
-    void EndSubTick();
+    void EndSubTick(const std::string &label);
 
-    std::shared_ptr<TimerNode> GetChild(const std::string &label);
+    std::shared_ptr<TimerNode> GetChild(const std::string &label) {
+      return _chidren[label];
+    }
 
     std::string Report(int deep = 0);
 
   private:
-    void Report(std::ostringstream &ss, int deep, const std::string &label);
+    void RecursiveReport(std::ostream &out, int deep);
 
   private:
     // children
@@ -56,6 +78,7 @@ class TimerNode {
     // self
     std::chrono::system_clock::time_point _last;
     std::chrono::system_clock::duration _acculumate {0};
+    std::string _label;
     bool _is_pause {false};
 };
 
@@ -65,8 +88,8 @@ class TimerTree {
     TimerTree(const std::string &label = "ROOT");
 
     void PushTick(const std::string &label);
-    void PopTick();
-    void ReplaceTick(const std::string &label);
+    void PopTick(const std::string &label);
+    void ReplaceTick(const std::string &old_label, const std::string &new_label);
 
     TimerNode& CurrentNode() { return *_stack.top(); }
 
@@ -78,3 +101,11 @@ class TimerTree {
     std::stack<std::shared_ptr<TimerNode>> _stack;
 };
 
+
+inline float duration_to_ms(std::chrono::system_clock::duration d) {
+  return d.count() / 1000000.0f;
+}
+
+inline void print_indent(std::ostream &out, int deep) {
+  while (deep--) out << "    ";
+}
