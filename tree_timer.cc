@@ -91,7 +91,7 @@ void TimerNode::EndSubTick(const std::string &label) {
 string TimerNode::Report(int deep) {
   ostringstream ss;
   print_indent(ss, deep);
-  ss << "+ " << _label << ": " 
+  ss << "+ " << _label << ": "
     << std::setw(12) << std::setprecision(4) << std::fixed
     << duration_to_ms(Span()) << "ms    100%" << endl;
   RecursiveReport(ss, 0);
@@ -111,17 +111,17 @@ void TimerNode::RecursiveReport(ostream &out, int deep) {
     print_indent(out, deep+1);
     out << "+ " << p.first << ": "
       << std::setw(10) << std::setprecision(4) << std::fixed
-      << child_ms << "ms  " 
+      << child_ms << "ms  "
       << std::setw(10) << std::setprecision(2) << std::fixed
       << child_ms / total * 100.0f << "%" << endl;
 
     p.second->RecursiveReport(out, deep+1);
   }
 
-  if (!_chidren.empty() && unaccounted / total > 0.00001f) {
+  if (!_chidren.empty() && unaccounted / total > 0.001f) {
     print_indent(out, deep+1);
-    out << "+ Unaccounted: " 
-      << std::setw(10) << std::setprecision(4) << std::fixed 
+    out << "+ Unaccounted: "
+      << std::setw(10) << std::setprecision(4) << std::fixed
       << unaccounted << "ms  "
       << std::setw(10) << std::setprecision(2) << std::fixed
       << unaccounted / total * 100.0f << "%" << endl;
@@ -159,6 +159,11 @@ void TimerTree::ReplaceTick(const std::string &old_label,
                             const std::string &new_label) {
   PopTick(old_label);
   PushTick(new_label);
+}
+
+
+float TimerTree::TopTickMs() {
+  return duration_to_ms(_stack.top()->Span());
 }
 
 

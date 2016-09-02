@@ -7,19 +7,30 @@
 
 #pragma once
 
-#include <functional>
+#include <utility>
 
+template <class T>
 class ScopeGuarder {
   public:
-    ScopeGuarder(std::function<void()> &&guard) : _guard(guard) {}
-    ScopeGuarder(ScopeGuarder&&) = default;
+    ScopeGuarder(T &&guard) : _guard(std::move(guard)) {}
     ~ScopeGuarder() { _guard();  }
 
+    ScopeGuarder(ScopeGuarder&&) = default;
+
   private:
-    std::function<void()> _guard;
     ScopeGuarder& operator=(ScopeGuarder&&) = delete;
     ScopeGuarder& operator=(const ScopeGuarder&) = delete;
     ScopeGuarder(const ScopeGuarder&) = delete;
+
+    T _guard;
 };
 
-#define ScopeGuard ScopeGuarder __FILE__##__LINE__##scope_guarder = (std::function<void()>)[&]()
+class ScopeGuarderEmptyType {};
+
+template <class T>
+inline ScopeGuarder<T> operator+(ScopeGuarderEmptyType , T &&guard) {
+  return ScopeGuarder<T>(std::move(guard));
+}
+
+#define ScopeGuard auto __FILE__##__LINE__##scope_guarder \
+  = ScopeGuarderEmptyType() + [&]

@@ -91,6 +91,7 @@ class TimerTree {
     void PopTick(const std::string &label);
     void ReplaceTick(const std::string &old_label, const std::string &new_label);
 
+    float TopTickMs();
     TimerNode& CurrentNode() { return *_stack.top(); }
 
     std::string Report();

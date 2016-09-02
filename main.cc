@@ -1,4 +1,5 @@
 #include <iostream>
+#include <vector>
 
 #include <unistd.h>
 
@@ -26,6 +27,7 @@ int main() {
     ScopeGuard {
       cout << "hello world" << endl;
     };
+    logger.log("in of scope {}", "hello");
   }
 
   logger.log("out of scope {}", "hello");
@@ -60,11 +62,8 @@ int main() {
 
 
   tick.TickMs();
-  sleep(2);
+  sleep(1);
   cout << tick.TickMs() << "ms" << endl;
-
-  int test();
-  test();
 
   return 0;
 }
