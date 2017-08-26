@@ -13,10 +13,22 @@
 
 #define DEBUG
 
-namespace simple_logger {
+namespace simplelogger {
 
 #define func_debug(__logger, __format, ...) do { \
-  __logger.debug("%s() " __format, __func__, ##__VA_ARGS__); \
+  __logger.debug("{}() " __format, __func__, ##__VA_ARGS__); \
+} while (false);
+
+#define func_log(__logger, __format, ...) do { \
+  __logger.log("{}() " __format, __func__, ##__VA_ARGS__); \
+} while (false);
+
+#define func_notice(__logger, __format, ...) do { \
+  __logger.notice("{}() " __format, __func__, ##__VA_ARGS__); \
+} while (false);
+
+#define func_error(__logger, __format, ...) do { \
+  __logger.error("{}() " __format, __func__, ##__VA_ARGS__); \
 } while (false);
 
 /**
@@ -41,14 +53,14 @@ template<typename T, typename ...A>
 void parse_format(std::ostringstream &ss, const char *format, const T &v, A... args);
 
 
-/*----------------------------------------------------------------------------*/
+/*------------------------------------------------------------------*/
 
 /**
  * logger for single thread
  */
-class BaseLogger {
+class Logger {
 public:
-  BaseLogger(Level level = kLog) : _log_level(level) {
+  Logger(Level level = kLog) : _log_level(level) {
     for (int l = 0; l < kMaxLevel; ++l) {
       _fp[l] = stdout;
     }
@@ -98,28 +110,7 @@ private:
 };
 
 
-/**
- * logger for multi thread
- */
-class MTLogger : BaseLogger {
-public:
-
-private:
-
-};
-
-
-/**
- * logger for mpi
- */
-class MPILogger : BaseLogger {
-public:
-
-private:
-
-};
-
-/*----------------------------------------------------------------------------*/
+/*------------------------------------------------------------------*/
 // implement
 
 template<typename T, typename ...A>
@@ -166,7 +157,7 @@ void parse_format(std::ostringstream &ss,
 
 
 template<typename ...A>
-void BaseLogger::print_wrapper(Level level, A... args) {
+void Logger::print_wrapper(Level level, A... args) {
 
   if (log_level() <= level) {
     std::ostringstream ss;
